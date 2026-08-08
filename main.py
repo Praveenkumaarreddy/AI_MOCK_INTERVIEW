@@ -39,7 +39,7 @@ async def upload_resume(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="PDF contains no readable text.")
         
         # Friendly Initial Prompt
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash-latest")
         intro_prompt = (
             "You are a super friendly, encouraging AI recruiter. Read this candidate's resume and generate a short, "
             "warm welcome message with emojis. Then, ask your very first interview question based on their coolest project or skill.\n\n"
