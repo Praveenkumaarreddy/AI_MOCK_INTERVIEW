@@ -164,11 +164,13 @@
     </div>
 
     <div class="container">
-        <!-- SCREEN 1: UPLOAD -->
-        <div id="uploadScreen" onclick="document.getElementById('fileInput').click()">
-            <i class="fas fa-file-pdf upload-icon"></i>
-            <h2>Drop your Resume here</h2>
-            <p style="color: var(--text-light); margin-top: 10px;" id="fileName">Supports .PDF files</p>
+        <!-- SCREEN 1: UPLOAD (Fixed for Mobile Event Bubbling) -->
+        <div id="uploadScreen">
+            <label for="fileInput" style="cursor: pointer; display: block; width: 100%;">
+                <i class="fas fa-file-pdf upload-icon"></i>
+                <h2>Drop your Resume here</h2>
+                <p style="color: var(--text-light); margin-top: 10px;" id="fileName">Supports .PDF files</p>
+            </label>
             <input type="file" id="fileInput" accept=".pdf" onchange="handleFile(event)">
             <button class="btn" id="startBtn" onclick="startSetup(event)" disabled>
                 <i class="fas fa-rocket"></i> Start Practice
@@ -229,7 +231,8 @@
 
     <script>
         // --- CONFIGURATION ---
-        const BACKEND_URL = "http://localhost:8000"; // CHANGE THIS TO YOUR RENDER URL LATER
+        // I have locked in your live Render URL correctly here.
+        const BACKEND_URL = "https://ai-mock-interview-jmfe.onrender.com"; 
         
         let resumeFile = null;
         let resumeContext = "";
@@ -247,7 +250,7 @@
         }
 
         async function startSetup(e) {
-            e.stopPropagation(); // Prevents triggering the file input again
+            e.stopPropagation(); 
             if (!resumeFile) return;
 
             const btn = document.getElementById('startBtn');
@@ -258,7 +261,8 @@
             formData.append("file", resumeFile);
 
             try {
-                const res = await fetch(`${https://ai-mock-interview-jmfe.onrender.com}/upload-resume`, { method: "POST", body: formData });
+                // Fixed the fetch URL syntax here
+                const res = await fetch(`${BACKEND_URL}/upload-resume`, { method: "POST", body: formData });
                 const data = await res.json();
                 
                 if (!res.ok) throw new Error(data.detail);
@@ -333,7 +337,8 @@
             document.getElementById('micBtn').disabled = true;
 
             try {
-                const res = await fetch(`${https://ai-mock-interview-jmfe.onrender.com}/evaluate`, {
+                // Fixed the fetch URL syntax here as well
+                const res = await fetch(`${BACKEND_URL}/evaluate`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ transcript: finalSpeech, resume_text: resumeContext })
