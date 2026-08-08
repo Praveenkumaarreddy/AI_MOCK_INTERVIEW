@@ -34,5 +34,5 @@ To run the backend API locally for development:
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/Praveenkumaarreddy/YOUR_REPO_NAME.git](https://github.com/Praveenkumaarreddy/YOUR_REPO_NAME.git)
-   cd YOUR_REPO_NAME
+   git clone [https://github.com/Praveenkumaarreddy/AI_MOCK_INTERVIEW.git](https://github.com/Praveenkumaarreddy/AI_MOCK_INTERVIEW.git)
+   cd AI_MOCK_INTERVIEW
