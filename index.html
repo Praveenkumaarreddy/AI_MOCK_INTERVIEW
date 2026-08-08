@@ -258,7 +258,7 @@
             formData.append("file", resumeFile);
 
             try {
-                const res = await fetch(`${BACKEND_URL}/upload-resume`, { method: "POST", body: formData });
+                const res = await fetch(`${https://ai-mock-interview-jmfe.onrender.com}/upload-resume`, { method: "POST", body: formData });
                 const data = await res.json();
                 
                 if (!res.ok) throw new Error(data.detail);
@@ -333,7 +333,7 @@
             document.getElementById('micBtn').disabled = true;
 
             try {
-                const res = await fetch(`${BACKEND_URL}/evaluate`, {
+                const res = await fetch(`${https://ai-mock-interview-jmfe.onrender.com}/evaluate`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ transcript: finalSpeech, resume_text: resumeContext })
