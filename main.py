@@ -38,8 +38,8 @@ async def upload_resume(file: UploadFile = File(...)):
         if not extracted_text.strip():
             raise HTTPException(status_code=400, detail="PDF contains no readable text.")
         
-        # FIXED: Standard model name
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # FIXED: Upgraded to Gemini 3.6 Flash
+        model = genai.GenerativeModel("gemini-3.6-flash")
         intro_prompt = (
             "You are a super friendly, encouraging AI recruiter. Read this candidate's resume and generate a short, "
             "warm welcome message with emojis. Then, ask your very first interview question based on their coolest project or skill.\n\n"
@@ -60,8 +60,8 @@ async def upload_resume(file: UploadFile = File(...)):
 async def process_interview(request: InterviewRequest):
     """Evaluates the answer and generates a strict scorecard format with emojis."""
     try:
-        # FIXED: Standard model name
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # FIXED: Upgraded to Gemini 3.6 Flash
+        model = genai.GenerativeModel("gemini-3.6-flash")
         
         prompt = (
             "You are a highly supportive, friendly AI technical interviewer. Use emojis naturally! 🌟\n"
