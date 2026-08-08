@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friendly AI Interviewer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-light: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5rem; color: var(--primary); margin-bottom: 10px; }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* UPLOAD SCREEN */
+        #uploadScreen {
+            background: var(--card-bg);
+            padding: 50px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+            border: 2px dashed #cbd5e1;
+            transition: 0.3s;
+        }
+        
+        #uploadScreen:hover { border-color: var(--primary); }
+        .upload-icon { font-size: 50px; color: var(--primary); margin-bottom: 20px; }
+        input[type="file"] { display: none; }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+
+        /* INTERVIEW SCREEN */
+        #interviewScreen {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            #interviewScreen { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        /* Camera Box */
+        .camera-container {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            aspect-ratio: 4/3;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        
+        .mic-controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        /* Scorecard UI */
+        .ai-chat-box {
+            background: #e0e7ff;
+            border-left: 5px solid var(--primary);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .score-box {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .score-box i { font-size: 24px; margin-bottom: 8px; color: var(--warning); }
+        .score-value { font-size: 1.8rem; font-weight: bold; color: var(--primary); }
+        .score-label { font-size: 0.85rem; color: var(--text-light); text-transform: uppercase; font-weight: 600;}
+
+        .suggestion-box {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none; /* Hidden until first answer */
+        }
+        .suggestion-box h4 { color: #166534; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;}
+
+        .transcript {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            min-height: 80px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.95rem;
+            color: var(--text-light);
+        }
+
+        .loading { display: none; text-align: center; color: var(--primary); font-weight: 600; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>✨ AI Interview Coach</h1>
+        <p>Friendly, personalized interview practice based on your resume.</p>
+    </div>
+
+    <div class="container">
+        <!-- SCREEN 1: UPLOAD -->
+        <div id="uploadScreen" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-file-pdf upload-icon"></i>
+            <h2>Drop your Resume here</h2>
+            <p style="color: var(--text-light); margin-top: 10px;" id="fileName">Supports .PDF files</p>
+            <input type="file" id="fileInput" accept=".pdf" onchange="handleFile(event)">
+            <button class="btn" id="startBtn" onclick="startSetup(event)" disabled>
+                <i class="fas fa-rocket"></i> Start Practice
+            </button>
+        </div>
+
+        <!-- SCREEN 2: INTERVIEW -->
+        <div id="interviewScreen">
+            <!-- Left Column: Camera & Controls -->
+            <div class="card">
+                <div class="camera-container">
+                    <video id="webcam" autoplay playsinline muted></video>
+                </div>
+                
+                <div class="mic-controls">
+                    <button class="btn" id="micBtn" onclick="toggleMic()" style="width: 100%;">
+                        <i class="fas fa-microphone"></i> Start Speaking
+                    </button>
+                    <div class="loading" id="loader"><i class="fas fa-spinner fa-spin"></i> AI is thinking...</div>
+                </div>
+
+                <div class="transcript" id="transcriptText" style="margin-top: 20px;">
+                    Your speech will appear here...
+                </div>
+            </div>
+
+            <!-- Right Column: AI Scorecard -->
+            <div class="card">
+                <div class="ai-chat-box" id="aiMessage">
+                    👋 Uploading your resume...
+                </div>
+
+                <div class="score-grid">
+                    <div class="score-box">
+                        <i class="fas fa-star"></i>
+                        <div class="score-value" id="scoreConf">--</div>
+                        <div class="score-label">Confidence</div>
+                    </div>
+                    <div class="score-box">
+                        <i class="fas fa-code"></i>
+                        <div class="score-value" id="scoreTech">--</div>
+                        <div class="score-label">Technical</div>
+                    </div>
+                    <div class="score-box">
+                        <i class="fas fa-comments"></i>
+                        <div class="score-value" id="scoreComm">--</div>
+                        <div class="score-label">Comm Skills</div>
+                    </div>
+                </div>
+
+                <div class="suggestion-box" id="suggestionBox">
+                    <h4><i class="fas fa-lightbulb"></i> Pro Tip</h4>
+                    <p id="suggestionText">Suggestions will appear here after your first answer.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const BACKEND_URL = "http://localhost:8000"; // CHANGE THIS TO YOUR RENDER URL LATER
+        
+        let resumeFile = null;
+        let resumeContext = "";
+        let recognition = null;
+        let isRecording = false;
+        let finalSpeech = "";
+
+        // --- UPLOAD LOGIC ---
+        function handleFile(e) {
+            resumeFile = e.target.files[0];
+            if (resumeFile) {
+                document.getElementById('fileName').innerText = `📄 ${resumeFile.name} selected!`;
+                document.getElementById('startBtn').disabled = false;
+            }
+        }
+
+        async function startSetup(e) {
+            e.stopPropagation(); // Prevents triggering the file input again
+            if (!resumeFile) return;
+
+            const btn = document.getElementById('startBtn');
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Reading Resume...`;
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append("file", resumeFile);
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/upload-resume`, { method: "POST", body: formData });
+                const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.detail);
+
+                resumeContext = data.resume_text;
+                
+                // Transition UI
+                document.getElementById('uploadScreen').style.display = 'none';
+                document.getElementById('interviewScreen').style.display = 'grid';
+                document.getElementById('aiMessage').innerHTML = data.initial_question;
+                
+                initCamera();
+                initSpeech();
+            } catch (err) {
+                alert("Error: " + err.message);
+                btn.innerHTML = `<i class="fas fa-rocket"></i> Start Practice`;
+                btn.disabled = false;
+            }
+        }
+
+        // --- HARDWARE LOGIC ---
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                document.getElementById('webcam').srcObject = stream;
+            } catch (err) {
+                console.error("Camera error:", err);
+            }
+        }
+
+        function initSpeech() {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRec) return alert("Please use Chrome for speech recognition.");
+            
+            recognition = new SpeechRec();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (e) => {
+                let temp = '';
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    if (e.results[i].isFinal) finalSpeech += e.results[i][0].transcript + ' ';
+                    else temp += e.results[i][0].transcript;
+                }
+                document.getElementById('transcriptText').innerText = finalSpeech + temp;
+            };
+        }
+
+        function toggleMic() {
+            const btn = document.getElementById('micBtn');
+            if (!isRecording) {
+                finalSpeech = "";
+                recognition.start();
+                isRecording = true;
+                btn.innerHTML = `<i class="fas fa-stop-circle"></i> Stop & Send`;
+                btn.style.background = "#ef4444";
+                document.getElementById('transcriptText').innerText = "Listening...";
+            } else {
+                recognition.stop();
+                isRecording = false;
+                btn.innerHTML = `<i class="fas fa-microphone"></i> Start Speaking`;
+                btn.style.background = "var(--primary)";
+                sendToAI();
+            }
+        }
+
+        // --- AI COMMUNICATION ---
+        async function sendToAI() {
+            if (!finalSpeech.trim()) return alert("I couldn't hear you! Please try again.");
+            
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('micBtn').disabled = true;
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/evaluate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ transcript: finalSpeech, resume_text: resumeContext })
+                });
+                
+                const data = await res.json();
+                updateScorecard(data.response);
+            } catch (err) {
+                alert("AI Error: " + err.message);
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('micBtn').disabled = false;
+            }
+        }
+
+        function updateScorecard(text) {
+            // Regex parsing to extract specific sections from the AI response
+            const feedback = text.match(/Feedback:\s*(.+)/i);
+            const suggestion = text.match(/Suggestion:\s*(.+)/i);
+            const conf = text.match(/Confidence:\s*(\d+)/i);
+            const tech = text.match(/Technical:\s*(\d+)/i);
+            const comm = text.match(/Communication:\s*(\d+)/i);
+            const nextQ = text.match(/Next Question:\s*(.+)/i);
+
+            // Update UI Elements
+            if (feedback && nextQ) {
+                document.getElementById('aiMessage').innerHTML = `<strong>Feedback:</strong> ${feedback[1]}<br><br><strong>Next Question:</strong> ${nextQ[1]}`;
+            }
+
+            if (suggestion) {
+                document.getElementById('suggestionBox').style.display = 'block';
+                document.getElementById('suggestionText').innerText = suggestion[1];
+            }
+
+            if (conf) document.getElementById('scoreConf').innerText = `${conf[1]}/10`;
+            if (tech) document.getElementById('scoreTech').innerText = `${tech[1]}/10`;
+            if (comm) document.getElementById('scoreComm').innerText = `${comm[1]}/10`;
+        }
+    </script>
+</body>
+</html>
