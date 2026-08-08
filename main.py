@@ -60,7 +60,8 @@ async def upload_resume(file: UploadFile = File(...)):
 async def process_interview(request: InterviewRequest):
     """Evaluates the answer and generates a strict scorecard format with emojis."""
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # FIXED: Updated to "-latest" here so the evaluation step doesn't crash!
+        model = genai.GenerativeModel("gemini-1.5-flash-latest")
         
         prompt = (
             "You are a highly supportive, friendly AI technical interviewer. Use emojis naturally! 🌟\n"
