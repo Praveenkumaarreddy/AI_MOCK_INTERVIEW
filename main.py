@@ -92,6 +92,12 @@ class InterviewRequest(BaseModel):
     transcript: str
     resume_text: str
 
+# --- ROOT HEALTH CHECK ROUTE ---
+@app.get("/")
+def root():
+    """Prevents 404 errors on Render health checks."""
+    return {"status": "online", "message": "AI Interview Coach Backend is running!"}
+
 @app.post("/upload-resume")
 async def upload_resume(file: UploadFile = File(...)):
     """Extracts text from PDF and generates a concise, direct welcome message."""
@@ -108,7 +114,6 @@ async def upload_resume(file: UploadFile = File(...)):
         
         model = genai.GenerativeModel("gemini-3.6-flash")
         
-        # UPDATED: Enforced short, punchy welcome and direct first question
         intro_prompt = (
             "You are a professional AI technical interviewer. "
             "Keep your greeting strictly to 1 short sentence, and immediately ask ONE clear, direct technical question based on their resume. No markdown asterisks or bullet points.\n\n"
