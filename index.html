@@ -386,7 +386,7 @@
             document.getElementById('micBtn').disabled = true;
 
             try {
-                const res = await fetch(`${BACKEND_URL}/evaluate`, {
+                const res = await fetch(`${https://ai-mock-interview-jmfe.onrender.com}/evaluate`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ transcript: speechText, resume_text: resumeContext })
