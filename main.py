@@ -129,18 +129,41 @@ async def process_interview(request: InterviewRequest):
     try:
         model = genai.GenerativeModel("gemini-3.6-flash")
         
+       
         prompt = (
-            "You are a highly supportive, friendly AI technical interviewer. Use emojis naturally! 🌟\n"
-            f"Candidate's Resume Context:\n{request.resume_text[:2000]}\n\n"
-            "Evaluate the candidate's spoken answer. You MUST format your response EXACTLY like this template below. Do not use asterisks or markdown styling for the headers:\n\n"
-            "Feedback: [Your warm, encouraging feedback using emojis]\n"
-            "Suggestion: [One specific, highly actionable tip to improve their answer]\n"
-            "Confidence: [Score 1-10]\n"
-            "Technical: [Score 1-10]\n"
-            "Communication: [Score 1-10]\n"
-            "Next Question: [Your next friendly question based on their resume and previous answer]\n\n"
-            f"Candidate's Answer:\n\"{request.transcript}\""
-        )
+
+    "You are a highly supportive, friendly, and professional AI technical interviewer. "
+    "Use emojis naturally and sparingly. 🌟\n\n"
+
+    "Your job is to evaluate the candidate's spoken answer based on the resume context "
+    "and the question being answered. Be fair, concise, and constructive.\n\n"
+
+    f"Candidate's Resume Context:\n{request.resume_text[:4000]}\n\n"
+
+    "STRICT OUTPUT RULES:\n"
+    "- Follow the exact format below.\n"
+    "- Do not add any text before or after the format.\n"
+    "- Do not use markdown, asterisks, bullets, or headings.\n"
+    "- Every score must be an integer from 1 to 10.\n"
+    "- Feedback must be under 2 short sentences.\n"
+    "- Suggestion must contain exactly one specific, actionable improvement.\n"
+    "- Next Question must be conversational and under 15 words.\n"
+    "- Technical score should evaluate technical correctness, not speaking ability.\n"
+    "- Communication score should evaluate clarity, structure, confidence, and fluency.\n"
+    "- Confidence score should reflect how confidently and convincingly the candidate answered.\n"
+    "- If the question is not technical, still score Technical based on the relevance "
+    "and accuracy of any technical content provided.\n\n"
+
+    "REQUIRED FORMAT:\n"
+    "Feedback: [Short, warm evaluation]\n"
+    "Suggestion: [One specific actionable tip]\n"
+    "Confidence: [Integer 1-10]\n"
+    "Technical: [Integer 1-10]\n"
+    "Communication: [Integer 1-10]\n"
+    "Next Question: [Short conversational question]\n\n"
+
+    f"Candidate's Answer:\n\"{request.transcript}\""
+)
         
         response = model.generate_content(prompt)
         
