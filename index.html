@@ -260,7 +260,7 @@
         // --- TEXT TO SPEECH (AI VOICE) ---
         function speakText(text) {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); 
+                window.speechSynthesis.cancel(); // Prevent overlapping
                 const cleanText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
                 const utterance = new SpeechSynthesisUtterance(cleanText);
                 utterance.lang = 'en-IN'; 
@@ -297,10 +297,12 @@
 
                 resumeContext = data.resume_text;
                 
+                // Transition UI
                 document.getElementById('uploadScreen').style.display = 'none';
                 document.getElementById('interviewScreen').style.display = 'grid';
                 document.getElementById('aiMessage').innerHTML = data.initial_question;
                 
+                // Trigger AI Voice
                 speakText(data.initial_question);
                 
                 initCamera();
@@ -328,7 +330,7 @@
             
             recognition = new SpeechRec();
             recognition.continuous = true;
-            recognition.interimResults = false; 
+            recognition.interimResults = false; // FIXED: Stops Android word stuttering
             recognition.lang = 'en-IN'; 
 
             recognition.onresult = (e) => {
@@ -339,6 +341,7 @@
                 document.getElementById('transcriptText').innerText = tempText;
             };
 
+            // FIXED: Auto-restart mic if Android cuts it off during a pause
             recognition.onend = () => {
                 if (isRecording) {
                     recognition.start();
@@ -359,9 +362,9 @@
                 isRecording = true;
                 btn.innerHTML = `<i class="fas fa-stop-circle"></i> Stop & Send`;
                 btn.style.background = "#ef4444";
-                window.speechSynthesis.cancel(); 
+                window.speechSynthesis.cancel(); // Stop AI speaking when you start
             } else {
-                isRecording = false; 
+                isRecording = false; // Stop the onend loop
                 recognition.stop();
                 btn.innerHTML = `<i class="fas fa-microphone"></i> Start Speaking`;
                 btn.style.background = "var(--primary)";
@@ -409,6 +412,7 @@
 
             if (feedback && nextQ) {
                 document.getElementById('aiMessage').innerHTML = `<strong>Feedback:</strong> ${feedback[1]}<br><br><strong>Next Question:</strong> ${nextQ[1]}`;
+                // Trigger AI Voice for feedback and next question
                 speakText(feedback[1] + ". " + nextQ[1]);
             } else {
                 document.getElementById('aiMessage').innerHTML = text; 
