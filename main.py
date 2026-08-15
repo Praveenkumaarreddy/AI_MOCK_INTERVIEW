@@ -94,7 +94,7 @@ class InterviewRequest(BaseModel):
 
 @app.post("/upload-resume")
 async def upload_resume(file: UploadFile = File(...)):
-    """Extracts text from PDF and generates a friendly emoji greeting."""
+    """Extracts text from PDF and generates a concise, direct welcome message."""
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF format is supported.")
     
@@ -107,9 +107,11 @@ async def upload_resume(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="PDF contains no readable text.")
         
         model = genai.GenerativeModel("gemini-3.6-flash")
+        
+        # UPDATED: Enforced short, punchy welcome and direct first question
         intro_prompt = (
-            "You are a super friendly, encouraging AI recruiter. Read this candidate's resume and generate a short, "
-            "warm welcome message with emojis. Then, ask your very first interview question based on their coolest project or skill.\n\n"
+            "You are a professional AI technical interviewer. "
+            "Keep your greeting strictly to 1 short sentence, and immediately ask ONE clear, direct technical question based on their resume. No markdown asterisks or bullet points.\n\n"
             f"Resume:\n{extracted_text[:2500]}"
         )
         
@@ -129,45 +131,38 @@ async def process_interview(request: InterviewRequest):
     try:
         model = genai.GenerativeModel("gemini-3.6-flash")
         
-       
         prompt = (
-
-    "You are a highly supportive, friendly, and professional AI technical interviewer. "
-    "Use emojis naturally and sparingly. 🌟\n\n"
-
-    "Your job is to evaluate the candidate's spoken answer based on the resume context "
-    "and the question being answered. Be fair, concise, and constructive.\n\n"
-
-    f"Candidate's Resume Context:\n{request.resume_text[:4000]}\n\n"
-
-    "STRICT OUTPUT RULES:\n"
-    "- Follow the exact format below.\n"
-    "- Do not add any text before or after the format.\n"
-    "- Do not use markdown, asterisks, bullets, or headings.\n"
-    "- Every score must be an integer from 1 to 10.\n"
-    "- Feedback must be under 2 short sentences.\n"
-    "- Suggestion must contain exactly one specific, actionable improvement.\n"
-    "- Next Question must be conversational and under 15 words.\n"
-    "- Technical score should evaluate technical correctness, not speaking ability.\n"
-    "- Communication score should evaluate clarity, structure, confidence, and fluency.\n"
-    "- Confidence score should reflect how confidently and convincingly the candidate answered.\n"
-    "- If the question is not technical, still score Technical based on the relevance "
-    "and accuracy of any technical content provided.\n\n"
-
-    "REQUIRED FORMAT:\n"
-    "Feedback: [Short, warm evaluation]\n"
-    "Suggestion: [One specific actionable tip]\n"
-    "Confidence: [Integer 1-10]\n"
-    "Technical: [Integer 1-10]\n"
-    "Communication: [Integer 1-10]\n"
-    "Next Question: [Short conversational question]\n\n"
-
-    f"Candidate's Answer:\n\"{request.transcript}\""
-)
+            "You are a highly supportive, friendly, and professional AI technical interviewer. "
+            "Use emojis naturally and sparingly. 🌟\n\n"
+            "Your job is to evaluate the candidate's spoken answer based on the resume context "
+            "and the question being answered. Be fair, concise, and constructive.\n\n"
+            f"Candidate's Resume Context:\n{request.resume_text[:4000]}\n\n"
+            "STRICT OUTPUT RULES:\n"
+            "- Follow the exact format below.\n"
+            "- Do not add any text before or after the format.\n"
+            "- Do not use markdown, asterisks, bullets, or headings.\n"
+            "- Every score must be an integer from 1 to 10.\n"
+            "- Feedback must be under 2 short sentences.\n"
+            "- Suggestion must contain exactly one specific, actionable improvement.\n"
+            "- Next Question must be conversational and under 15 words.\n"
+            "- Technical score should evaluate technical correctness, not speaking ability.\n"
+            "- Communication score should evaluate clarity, structure, confidence, and fluency.\n"
+            "- Confidence score should reflect how confidently and convincingly the candidate answered.\n"
+            "- If the question is not technical, still score Technical based on the relevance "
+            "and accuracy of any technical content provided.\n\n"
+            "REQUIRED FORMAT:\n"
+            "Feedback: [Short, warm evaluation]\n"
+            "Suggestion: [One specific actionable tip]\n"
+            "Confidence: [Integer 1-10]\n"
+            "Technical: [Integer 1-10]\n"
+            "Communication: [Integer 1-10]\n"
+            "Next Question: [Short conversational question]\n\n"
+            f"Candidate's Answer:\n\"{request.transcript}\""
+        )
         
         response = model.generate_content(prompt)
         
-        # FIXED: Call the database function to log this evaluation
+        # Save evaluation to SQLite database
         save_to_database(request.resume_text, request.transcript, response.text)
         
         return {"response": response.text}
@@ -175,7 +170,7 @@ async def process_interview(request: InterviewRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail="AI evaluation failed.")
 
-# --- NEW ENDPOINT TO SHOW JUDGES ---
+# --- ENDPOINT TO SHOW JUDGES ---
 @app.get("/history")
 def get_interview_history():
     """Endpoint for judges to see the live database records."""
@@ -183,7 +178,6 @@ def get_interview_history():
         conn = sqlite3.connect(DB_NAME)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        # Fetch the 10 most recent interview evaluations
         cursor.execute("SELECT * FROM evaluations ORDER BY id DESC LIMIT 10")
         rows = cursor.fetchall()
         conn.close()
