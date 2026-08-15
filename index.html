@@ -139,7 +139,7 @@
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
-            display: none; /* Hidden until first answer */
+            display: none; 
         }
         .suggestion-box h4 { color: #166534; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;}
 
@@ -154,6 +154,20 @@
         }
 
         .loading { display: none; text-align: center; color: var(--primary); font-weight: 600; margin-top: 15px; }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            width: 100%;
+        }
+        .footer strong {
+            color: var(--primary);
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -164,7 +178,7 @@
     </div>
 
     <div class="container">
-        <!-- SCREEN 1: UPLOAD (Fixed for Mobile Event Bubbling) -->
+        <!-- SCREEN 1: UPLOAD -->
         <div id="uploadScreen">
             <label for="fileInput" style="cursor: pointer; display: block; width: 100%;">
                 <i class="fas fa-file-pdf upload-icon"></i>
@@ -229,6 +243,11 @@
         </div>
     </div>
 
+    <!-- FOOTER -->
+    <div class="footer">
+        Project built by <strong>T Praveen Kumaar Reddy</strong>
+    </div>
+
     <script>
         // --- CONFIGURATION ---
         const BACKEND_URL = "https://ai-mock-interview-jmfe.onrender.com"; 
@@ -237,6 +256,18 @@
         let resumeContext = "";
         let recognition = null;
         let isRecording = false;
+
+        // --- TEXT TO SPEECH (AI VOICE) ---
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Prevent overlapping
+                const cleanText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.lang = 'en-IN'; 
+                utterance.rate = 1.0;     
+                window.speechSynthesis.speak(utterance);
+            }
+        }
 
         // --- UPLOAD LOGIC ---
         function handleFile(e) {
@@ -271,6 +302,9 @@
                 document.getElementById('interviewScreen').style.display = 'grid';
                 document.getElementById('aiMessage').innerHTML = data.initial_question;
                 
+                // Trigger AI Voice
+                speakText(data.initial_question);
+                
                 initCamera();
                 initSpeech();
             } catch (err) {
@@ -296,19 +330,22 @@
             
             recognition = new SpeechRec();
             recognition.continuous = true;
-            recognition.interimResults = true;
-            
-            // Optimize for Indian English accents to improve mobile accuracy
+            recognition.interimResults = false; // FIXED: Stops Android word stuttering
             recognition.lang = 'en-IN'; 
 
             recognition.onresult = (e) => {
                 let tempText = '';
-                // Gather all words spoken during this session
                 for (let i = 0; i < e.results.length; i++) {
-                    tempText += e.results[i][0].transcript;
+                    tempText += e.results[i][0].transcript + ' ';
                 }
-                // Push the live transcript directly to the screen
                 document.getElementById('transcriptText').innerText = tempText;
+            };
+
+            // FIXED: Auto-restart mic if Android cuts it off during a pause
+            recognition.onend = () => {
+                if (isRecording) {
+                    recognition.start();
+                }
             };
             
             recognition.onerror = (e) => {
@@ -325,13 +362,13 @@
                 isRecording = true;
                 btn.innerHTML = `<i class="fas fa-stop-circle"></i> Stop & Send`;
                 btn.style.background = "#ef4444";
+                window.speechSynthesis.cancel(); // Stop AI speaking when you start
             } else {
+                isRecording = false; // Stop the onend loop
                 recognition.stop();
-                isRecording = false;
                 btn.innerHTML = `<i class="fas fa-microphone"></i> Start Speaking`;
                 btn.style.background = "var(--primary)";
                 
-                // FIXED: Grab whatever text is visible on the screen instead of waiting for Android
                 let finalSpeech = document.getElementById('transcriptText').innerText;
                 finalSpeech = finalSpeech.replace("Listening...", "").trim();
                 
@@ -375,8 +412,11 @@
 
             if (feedback && nextQ) {
                 document.getElementById('aiMessage').innerHTML = `<strong>Feedback:</strong> ${feedback[1]}<br><br><strong>Next Question:</strong> ${nextQ[1]}`;
+                // Trigger AI Voice for feedback and next question
+                speakText(feedback[1] + ". " + nextQ[1]);
             } else {
                 document.getElementById('aiMessage').innerHTML = text; 
+                speakText(text);
             }
 
             if (suggestion) {
